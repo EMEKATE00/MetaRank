@@ -1,22 +1,5 @@
----
-title: "MetaRank Usage Instructions"
-format:
-  html:
-    toc: true
-    toc-depth: 4
-    number-sections: true
-    theme: cosmo
-    self-contained: true
----
+# "MetaRank Usage Instructions"
 
-```{=html}
-<style>
-body {
-  text-align: justify;
-  font-size: 0.95em;
-}
-</style>
-```
 
 ------------------------------------------------------------------------
 
