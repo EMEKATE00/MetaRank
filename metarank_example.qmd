@@ -1,0 +1,1031 @@
+---
+title: "MetaRank Practical Example"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    self-contained: false
+---
+
+```{=html}
+<style>
+body {
+  text-align: justify;
+  font-size: 0.95em;
+}
+</style>
+```
+
+------------------------------------------------------------------------
+
+This document provides guided, step-by-step examples illustrating how to use MetaRank, a powerful tool designed to perform robust meta-analysis of gene rankings across multiple datasets. Through consensus ranking strategies, either weighted (RankProd) or non-weighted (RobustRankAggreg), MetaRank identifies consistently ranked genes across independent gene lists.
+
+The examples below aim to demonstrate both fundamental and advanced functionalities of the application. They range from simple consensus ranking to integrated downstream enrichment analysis of the top 100 ranked genes. Users will be guided through input preparation, parameter settings, result visualization, and interpretation.
+
+1.  **Overview**
+2.  **RankProd Basic Example**: Consensus Ranking with Example Data and No Enrichment Analysis
+    -   Method Selection
+    -   Input
+    -   Parameters
+    -   Data Visualization
+    -   Outputs
+2.  **Rankprod Advanced Example**: Consensus Ranking with Example Data and GO (Biological Process) Enrichment Analysis
+    -   Method Selection
+    -   Input
+    -   Parameters
+    -   Data Visualization
+    -   Outputs
+3.  **RobustRankAggreg Specific Example**: Consensus Ranking with Example Data, RRA method and Reactome Enrichment Analysis
+    -   Method Selection
+    -   Input
+    -   Parameters
+    -   Data Visualization
+    -   Outputs
+
+<br>
+
+## Overview
+
+Three practical examples are presented:
+
+-   **RankProd Basic Example** — Demonstrates the core functionality of MetaRank using example gene lists and the basic RankProd method, without performing downstream enrichment. This is ideal for users seeking a quick overview of consensus-based ranking strategies and output interpretation.
+-   **RankProd Advanced Example** — A more in-depth use case where users upload personalized data, fine-tune analysis parameters of the advanced RankProd method, and execute Gene Ontology (GO) enrichment on the final ranked list. It also illustrates how the penalization system affects results.
+-   **RobustRankAggreg Example** — Showcases the RRA method using example datasets. As a non-parametric alternative to RankProd, RRA combines rankings without assumptions on distribution or weighting. The resulting gene list is then analyzed through KEGG pathway enrichment.
+
+Each example includes a breakdown of key parameters, their purpose, visualization settings, and how results can be explored and exported. All necessary information is self-contained within each example, allowing users to fully understand the functionality of the app without needing to read previous or subsequent examples.
+
+## RankProd Basic Example: Consensus Ranking with Example Data and No Enrichment Analysis
+
+**Objective:** Obtain a consensus-ranked gene list using the RankProd method on internal example data without conducting functional enrichment. The data will be strictly filtered to maintain a robust database and a reduced table containing only the ranking and gene will be downloaded, the rest of the visual parameters will be left as default.
+
+### Method Selection
+
+Before running the meta-analysis, it is essential to understand the structure and nature of the input data. In this example, we will work with predefined example datasets specifically formatted for the RankProd method, as described in the objective.
+
+The first step is to select the appropriate meta-ranking strategy, which should be based on both the characteristics of the input (e.g., presence or absence of associated scores, prevalence of missing values) and the analytical goals (e.g., stricter versus more permissive integration). MetaRank provides two complementary methods:
+
+-   **Weighted (Ranked by Scores)**: This option employs the RankProd algorithm, which is designed for gene lists that include associated quantitative values (e.g., fold changes, signal intensities, statistical scores). These values are used to re-rank the genes within each list prior to meta-analysis. The method calculates the geometric mean of rank positions across all lists, allowing for a flexible treatment of missing values and improving robustness in the presence of heterogeneity.
+
+-   **Unweighted (Simple Ranked Lists)**: This option utilizes the RobustRankAggreg (RRA) algorithm, which operates on gene lists that are already pre-ranked without associated scores. RRA supports various aggregation strategies—such as median, arithmetic mean, or geometric mean—to produce a consensus rank. It is computationally efficient, conceptually straightforward, and often preferred for standard rank combination tasks.
+
+In this example, the Weighted method is selected, corresponding to RankProd, as specified in the objective. This is appropriate when each gene list contains quantitative information that can guide the re-ranking and subsequent consensus-building process.
+
+### Input
+
+The input configuration establishes the foundation for the meta-ranking procedure and defines the source and structure of the gene data to be analyzed. In this configuration, the workflow is set to operate using predefined example datasets specifically prepared to demonstrate the functionality of the weighted method based on RankProd. To activate these datasets, users must select the `Upload Files` mode and enable the `Use Example Data` switch. Once enabled, this action will automatically load four internal `.TSV` files containing gene-level data, and these will take precedence over any user-uploaded files or pasted content. Thus, regardless of any data uploaded through the file input or inserted into the text box, the example data will be used as long as the switch remains activated.
+
+These internal datasets correspond to four independent studies on human non-small cell lung cancer (NSCLC) available in the GEO database and have been preprocessed to simulate a realistic input scenario for meta-analysis. Each dataset has no header and consists of two columns: the first containing gene identifiers in `SYMBOL` format, and the second containing a continuous value associated with each gene (e.g., adjusted p-values from differential expression analysis). The structure of these files aligns with the requirements of the RankProd method, which computes a consensus ranking based on the geometric mean of ranked positions across studies, offering a robust framework for integrating heterogeneous genomic datasets. Each gene list retains duplicates and missing values to preserve biological variability and better emulate real experimental conditions.
+
+The following table summarizes the composition of the four included datasets:
+
+| Study   | GEO Accession | Sample Composition                                            | Genes (rows) | Identifier Type | Value Type |
+| ------- | ------------- | ------------------------------------------------------------- | ------------ | --------------- | ---------- |
+| Study 1 | GSE10072      | Tumor vs. adjacent normal tissue (lung adenocarcinoma)        | 22,283       | SYMBOL          | p-value    |
+| Study 2 | GSE19188      | Tumor and control samples (multiple NSCLC histological types) | 54,675       | SYMBOL          | p-value    |
+| Study 3 | GSE63459      | Paired tumor-normal samples (lung adenocarcinoma)             | 24,526       | SYMBOL          | p-value    |
+| Study 4 | GSE75037      | Lung tissue profiles from NSCLC patients                      | 48,803       | SYMBOL          | p-value    |
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 1: Example data composition
+</p>
+
+
+These files are bundled into a single .zip archive that users may download for detailed inspection or reuse in external analyses. This supports full transparency regarding the origin and content of the data used in example workflows. 
+
+::: callout-note
+Users can explore these datasets interactively using the UpsetPlot and Heatmap graphs, generated after launching the analysis (for more information, see sections 5.1.1 and 5.1.2 of the instruction manual), which allow users to visualise gene overlaps between studies and evaluate their relative distribution and scale. These tools are particularly useful for understanding the heterogeneity of the datasets and assessing how these factors may influence the final consensus classification.
+:::
+
+### Parameters
+
+The analysis options selected to achieve the objective are as follows:
+
+| Parameter                           | Selected Option | Justification and Description                                                                                                                                                                                                                                                                                              |
+| ----------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rank-Based Meta-Analysis Method** | RankProd basic  | Utilizes the Rank Product algorithm to integrate multiple ranked gene lists, each with associated scores (e.g., p-values). This method calculates a geometric mean of gene ranks across studies, allowing robust aggregation while handling missing data flexibly. Suitable when input includes scores per gene.           |
+| **Minimum Number of Lists**         | 4               | Filters the results to include only genes present in **all** input datasets (i.e., 100% appearance). This maximizes stringency by excluding genes with incomplete coverage across studies. Lower values would allow genes present in fewer lists to be included, increasing sensitivity at the cost of reliability.        |
+| **Ranking Direction**               | Ascending       | Required when the gene-associated values reflect significance in ascending order (e.g., p-values). Lower values indicate stronger evidence and are ranked higher. For other metrics such as log fold changes, the direction may be inverted (descending).                                                                  |
+| **NA Management**                   | Impute NA       | Missing values in the ranking matrices are replaced using the gene-specific median across the available lists. This prevents loss of partially observed genes while preserving ranking stability. Alternatives include ignoring missing values and working only with the present values or assigning them the worst range. |
+| **Apply Extra Penalization**        | Not selected    | When enabled, this option applies an additional rank penalty to genes with incomplete presence across datasets. Since this analysis uses only genes present in 100% of the lists, penalization is unnecessary and disabled. It may be useful in more permissive scenarios.                                                 |
+| **Perform Enrichment Analysis**     | Not selected    | The enrichment module is not used in this example. When activated, this would perform functional analysis (e.g., ORA) on the consensus-ranked gene list post-meta-analysis.                                                                                                                                                |
+| **Number of Top Genes**             | Not visible     | Defines how many top-ranked genes (e.g., top 100) are used for functional enrichment. This parameter becomes available only when enrichment analysis is selected.                                                                                                                                                          |
+| **ORA Database**                    | Not visible     | Specifies the reference database (e.g., GO, KEGG, Reactome) used for Over-Representation Analysis (ORA). Not displayed unless enrichment is enabled.                                                                                                                                                                       |
+| **Ontology**                        | Not visible     | Applicable when the selected database is Gene Ontology. Allows selection between Biological Process (BP), Cellular Component (CC), and Molecular Function (MF). Hidden unless ORA is enabled and GO is chosen.                                                                                                             |
+| **Species**                         | Not visible     | Indicates the organism from which gene annotations are retrieved for enrichment analysis. Necessary for proper mapping of gene identifiers, but only shown if enrichment is activated.                                                                                                                                     |
+| **Gene ID**                         | Not visible     | Defines the gene identifier type (e.g., SYMBOL, ENSEMBL, ENTREZID) expected in the input data. Used to correctly interpret and map genes during enrichment analysis. Hidden unless that module is enabled.                                                                                                                 |
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 2: Configuration of the parameters tab for the basic example of use
+</p>
+
+::: callout-note
+
+In this example, no additional parameters beyond those listed above are required. However, if the `Advanced` method is selected under *Rank-Based Meta-Analysis Method*, an additional variable called `Origin` will appear. This setting is accompanied by an information button that details the expected format for integrating study-specific metadata.
+
+Also note that the `Minimum Number of Lists` parameter is dynamically adjusted according to the number of uploaded or loaded datasets. In this case, it is set to `4` because the analysis uses four predefined example lists. If, for instance, eight datasets are provided, the slider will reflect a range from `1` to `8`.
+
+Finally, the `NA Management` setting has no effect in this analysis, as only genes present in 100% of the lists are included. In less restrictive scenarios, however, this parameter helps personalize the consensus ranking by specifying how to handle missing values—e.g., imputing with the gene's median rank across lists.
+
+:::
+
+
+
+
+### Data Visualization
+
+Once the parameters have been configured, attention turns to the output visualization section (`Data Visualization`), where both the resulting table and plots can be fully customized. In this situation, only the columns selected in Meta-Analysis Columns will be modified, and the rest of the variables will remain at their default settings. 
+
+
+| Setting                         | Configuration                | Details                                                                                                                          |
+| ------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Meta-Analysis Columns           | GeneID, Rank only            | Only these two columns were selected to simplify the output and emphasize the gene identities and their consensus ranks.         |
+| Upset Plot – Text Size          | 25                           | Ensures readability while keeping element spacing compact.                                                                       |
+| Upset Plot – Sets Bar Color     | `#2ba915` (green)            | Indicates horizontal bars (set size); the default green improves visual contrast.                                                |
+| Upset Plot – Intersection Color | `#0838a0` (dark blue)             | Defines vertical bars (intersections); dark blue highlights overlap frequencies across datasets.                                 |
+| Heatmap – Tick Size             | 15                           | Governs axis label size in the heatmap.                                                                                          |
+| Heatmap – Title Size            | 20                           | Controls size of the plot title; balanced for clarity.                                                                           |
+| Heatmap – Color Scale           | Viridis                      | Chosen for its perceptual uniformity and suitability for publication-ready plots.                                                |
+| Enrichment Table Columns        | All default columns selected | Includes full information (ID, Description, p-values, gene counts, ratios) to provide a comprehensive enrichment result summary. |
+| Number of Terms to Show         | 10                           | Limits the visualization to the top 10 terms based on significance, improving clarity in plot layout.                            |
+| Y-Axis Label                    | Term + Description           | Displays both the Reactome/KEGG/GO ID and its biological description for maximum interpretability.                                        |
+| Plot Type                       | Dot Plot                     | Preferred for its dual encoding of p-value (color) and count (dot size), offering a compact, informative representation.         |
+| Plot – Low Color                | `#0838a0` (dark blue)        | Encodes higher significance (lower p-values) using a saturated blue tone.                                                        |
+| Plot – High Color               | `#2ba915` (green)            | Represents lower significance values on the opposite end of the scale, forming a gradient with intuitive contrast.               |
+| Plot – Text Size                | 12 pt                        | Default size offering optimal readability without overcrowding the axes or labels.                                               |
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 3: Configuration of the data visualization tab for the basic example of use
+</p>
+
+<br>
+
+Once customization is complete, pressing the `Run Analysis` button initiates the *Over-Representation Analysis (ORA)*, applies the selected meta-analysis method, constructs the final results structure, and renders both the interactive table and the corresponding plot.
+
+::: callout-tip
+Table and plot customizations can also be performed after analysis completion; any changes to columns, filters, or visual settings will be applied immediately without re-running the analysis.
+:::
+
+### Outputs
+
+#### Meta-analysis Table
+
+-   Displays only GeneID and Rank, representing the final consensus ranking after applying the RankProd algorithm under the selected conditions.
+-   The table is downloadable in `TSV` format via the export button.
+-   The same results are reproduced below as an interactive data table for convenience.
+-   Users can filter, search, and select rows, as well as scroll horizontally or vertically depending on the number of genes and columns.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/MetaRank_Results_2025-06-06.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<br>
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 4: Results obtained in table format after running the basic example
+</p>
+
+<br>
+
+#### Excluded table
+
+Interactive data table showing all genes that were excluded from the final meta-analysis results due to insufficient presence across lists.
+In this example, genes appearing in only 1, 2, or 3 out of the 4 datasets were excluded. This helps ensure that only highly consistent genes are retained.
+
+![](www/images/example1_metarank_excluded.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -2px;">
+Figure 1: Excluded data in table format after running the basic example
+</p>
+
+
+#### UpsetPlot
+
+The UpSet plot summarizes the intersection patterns between input lists, showing how many genes are shared across different combinations of datasets.
+
+-   Each vertical bar represents the size of an intersection between a specific combination of input lists.
+-   The connected dots below each bar indicate which lists are involved in that intersection.
+-   This allows users to identify whether a large portion of genes are shared across all datasets or are unique to a few.
+
+The plot represents the raw data before filtering, and is useful for understanding list overlaps before applying strict presence thresholds.
+The image is downloaded in `PNG` format.
+
+![](www/images/example1_metarank_upset.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;">
+Figure 2: UpsetPlot obtained after running the basic example with example data
+</p>
+
+
+#### Heatmap
+
+Visualizes the pairwise similarity between input gene lists, based on the proportion of shared genes.
+
+-   Each cell shows the fraction of genes from one list also present in another.
+-   Diagonal cells = 1.00 (self-comparison); off-diagonal values indicate overlap.
+-   Based on raw gene content, independent of rank or scores.
+
+The heatmap is downloaded in `PNG` format.
+
+
+![](www/images/example1_metarank_heatmap.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;">
+Figure 3: Heatmap obtained after running the basic example with example data
+</p>
+
+
+#### Enrichment Analysis Table
+
+Not available in this example.
+The enrichment analysis module was not selected, so no enrichment table is displayed.
+To explore this functionality, refer to Example 2, where enrichment results are included.
+
+
+#### Enrichment Plot
+
+Not available in this example.
+As enrichment analysis was disabled, no associated visualizations (e.g., dotplot or barplot) are generated.
+See Example 2 for details on enrichment visualization and interpretation.
+
+<br>
+
+
+
+## Rankprod Advanced Example: Consensus Ranking with Example Data and GO Enrichment Analysis
+
+**Objective:** Perform a more flexible meta-analysis using the advanced RankProd method with grouped dataset integration and relaxed filtering. The analysis includes functional enrichment of the top 100 human genes (`SYMBOL`) using *GO:Biological Process*, allowing for exploration of how different NA handling strategies and penalization settings impact the results.
+
+### Method Selection
+
+This example continues to use the weighted meta-ranking strategy (RankProd), which is appropriate for datasets that include quantitative values such as adjusted p-values or effect sizes. Unlike the first example, here we explore a more permissive integration approach, allowing for broader inclusion of genes and a more flexible treatment of missing data.
+
+To illustrate the versatility of the method, we apply different configurations for missing value handling (impute, ignore) and penalization strategies, including the use of custom penalization to weigh underrepresented genes differently. Additionally, a grouping vector `c(1, 2, 1, 2)` is introduced to model dataset-specific batch effects in the RankProd advanced mode.
+
+### Input
+
+As in the previous example, we use predefined internal datasets available through the Use Example Data switch, with the analysis mode set to Upload Files. These datasets correspond to four human studies related to non-small cell lung cancer (NSCLC) from GEO and are provided in a suitable format for the RankProd algorithm.
+
+Each file includes two columns: `SYMBOL` gene identifiers and associated p-values. The gene lists preserve missing values and duplicates to simulate real-world scenarios. The same datasets used in *Example 1* are employed here, but with a more permissive filtering, requiring genes to appear in at least two out of four lists to be included in the meta-ranking.
+
+For a detailed breakdown of the datasets, see *Table 1: Example data composition*.
+
+### Parameters
+
+The analysis options selected to achieve the objective are as follows:
+
+| Parameter                           | Selected Option   | Justification and Description                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rank-Based Meta-Analysis Method** | RankProd advanced | Applies the advanced version of the Rank Product algorithm, enabling grouping of gene lists based on user-defined metadata. This version supports comparative scenarios across technologies, time points, or study conditions by allowing more complex structuring of the input data. It improves interpretability and statistical relevance.      |
+| **Origin**                          | 1,2,1,2           | Encodes group assignments for each input list, indicating how they should be treated during rank product calculation. In this case, the values `1,2,1,2` assign the four gene lists into two interleaved groups, which might reflect different biological conditions, technologies, or data sources. This is essential for stratified comparisons. |
+| **Minimum Number of Lists**         | 2                 | Filters the results to include only genes appearing in **at least 2** datasets. This balances inclusiveness and reliability, allowing genes with limited but relevant support to be considered while still reducing noise from rare or spurious entries.                                                                                           |
+| **Ranking Direction**               | Ascending         | Required when gene-associated scores reflect statistical significance in ascending order (e.g., p-values). Genes with lower scores are ranked higher. This choice ensures correct ordering and comparability across input datasets.                                                                                                                |
+| **NA Management**                   | All strategies    | The analysis is executed independently under five different strategies for handling missing values: ignoring NAs, imputing with gene-specific medians, or assigning worst-case ranks. Each configuration produces a separate result that can be downloaded and compared, enabling a structured evaluation of how missing data affects the consensus.                                          |
+| **Apply Extra Penalization**        | All strategies    | The analysis includes scenarios with and without extra penalization for genes missing in some datasets. This feature adjusts ranks downward for partially observed genes, reducing the risk of overestimating their relevance. Exploring both settings improves confidence in the stability of top-ranked genes.                                   |
+| **Perform Enrichment Analysis**     | Enabled           | Activates functional enrichment (Over-Representation Analysis) on the top-ranked genes. This helps interpret the biological relevance of consensus results by identifying overrepresented pathways or gene ontology categories.                                                                                                                    |
+| **Number of Top Genes**             | 100               | Defines the number of top-ranked genes (based on consensus ranking) used as input for enrichment analysis. A threshold of 100 offers a focused yet sufficiently broad gene set for detecting meaningful biological signals.                                                                                                                        |
+| **ORA Database**                    | GO                | Specifies the Gene Ontology (GO) database as the reference for functional enrichment. GO offers comprehensive coverage of biological processes, cellular components, and molecular functions, making it suitable for exploratory analysis of gene function and pathways.                                                                           |
+| **Ontology**                        | BP                | Restricts the enrichment to the **Biological Process** (BP) sub-ontology within GO. This focuses the analysis on functional pathways and biological activities in which the genes are involved, often yielding interpretable and actionable results.                                                                                               |
+| **Species**                         | Human             | Indicates that the input data refer to *Homo sapiens*, ensuring proper mapping of gene identifiers and accurate retrieval of functional annotations during enrichment.                                                                                                                                                                             |
+| **Gene ID**                         | SYMBOL            | Specifies that gene identifiers in the input files use the **SYMBOL** notation (e.g., TP53, EGFR). This must match the annotation format expected by the enrichment tool to enable proper gene mapping.                                                                                                                                            |
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 5: Configuration of the parameters tab for the advanced example of use
+</p>
+
+::: callout-note
+
+The RankProd advanced method enables the integration of structured gene lists through the use of the `Origin` parameter, which assigns group labels to the datasets. These labels allow the meta-analysis to account for differences such as experimental conditions, platforms, or study batches. In this example, the pattern `1,2,1,2` indicates that the input gene lists alternate between two distinct groups.
+
+For both `NA Management` and `Extra Penalization`, the analysis is repeated under all available strategies. This design enables users to compare how each configuration affects the resulting consensus, particularly for genes with incomplete representation across lists. Results can be filtered or visualized accordingly using interactive plots and tables.
+
+The enrichment module is activated with a limit of the top 100 genes ranked by consensus. This enables downstream functional analysis using the GO Biological Process ontology, mapped to the Human genome using `SYMBOL` identifiers. These selections are suitable for interpreting biological functions in the context of human disease studies.
+
+:::
+
+
+### Data Visualization
+
+Once the parameters have been configured, attention turns to the output visualization section (`Data Visualization`), where both the resulting table and plots can be fully customized. In this example, specific visualization preferences were selected to emphasize clarity and facilitate interpretation of results.
+
+
+| Setting                             | Configuration                                     | Details                                                                                                                                             |
+| ----------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Meta-Analysis Columns**           | GeneID, Rank, FileCount, Filenames, GenePositions | These columns were selected to provide both core consensus metrics (gene identity and rank) and contextual metadata for each gene across datasets.  |
+| **Upset Plot – Text Size**          | 30                                                | A larger label size was chosen to ensure legibility when dealing with broader intersections and set names.                                          |
+| **Upset Plot – Sets Bar Color**     | `#e6b800` (yellow)                                | Replaces the default green with a yellow tone for better contrast with the new palette and improved visual separation from intersection bars.       |
+| **Upset Plot – Intersection Color** | `#6a1b9a` (dark purple)                           | A deep purple was chosen to enhance the distinction of intersecting gene sets, especially when dealing with a large number of overlapping datasets. |
+| **Heatmap – Tick Size**             | 17                                                | Slightly increased for better visibility of axis labels while preserving plot compactness.                                                          |
+| **Heatmap – Title Size**            | 25                                                | Enlarged to ensure prominence of the plot’s title in reports and presentations.                                                                     |
+| **Heatmap – Color Scale**           | Portland                                          | Offers a smooth, perceptually balanced gradient suitable for showing rank-based values.                                                             |
+| **Enrichment Table Columns**        | ID, Description                                   | Only the essential columns are retained to reduce complexity and direct focus to the biological meaning of enriched terms.                          |
+| **Number of Terms to Show**         | 20                                                | Displays the top 20 enriched terms, offering a broader overview while maintaining clarity in the associated bar plot.                               |
+| **Y-Axis Label**                    | Description                                       | Simplifies the plot by showing only the biological description, omitting technical term IDs for cleaner readability.                                |
+| **Plot Type**                       | Bar Plot                                          | Chosen for its simplicity and effectiveness in displaying term frequency and enrichment scores in a ranked, categorical format.                     |
+| **Plot – Low Color**                | `#6a1b9a` (dark purple)                           | Dark purple highlights the most significant terms (lowest p-values), drawing attention to key biological signals.                                   |
+| **Plot – High Color**               | `#e6b800` (yellow)                                | A contrasting yellow tone represents less significant terms, forming a visually intuitive gradient with the dark purple.                            |
+| **Plot – Text Size**                | 10 pt                                             | Reduced to optimize spacing and avoid overlapping text in the denser 20-term visualization.                                                         |
+
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 6: Configuration of the data visualization tab for the advanced example of use 
+</p> 
+
+Once customization is complete, pressing the `Run Analysis` button initiates the *Over-Representation Analysis (ORA)*, applies the selected meta-analysis method, constructs the final results structure, and renders both the interactive table and the corresponding plot.
+
+::: callout-tip
+Table and plot customizations can also be performed after analysis completion; any changes to columns, filters, or visual settings will be applied immediately without re-running the analysis.
+:::
+
+### Outputs
+
+#### Meta-analysis Table
+
+-   Five independent analyses were executed using different strategies for handling missing values (NA): ignoring them, imputing with gene-specific medians, or assigning worst possible ranks.
+-   Each run produced a separate consensus ranking table, which was downloaded individually in `TSV` format for comparison.
+-   These tables enable users to assess the sensitivity of the consensus rankings to different missing-data treatments and inspect how rankings shift across conditions.
+-   All five result tables are displayed below as interactive data tables, allowing users to explore differences across runs.
+-   Each table includes columns such as `GeneID`, `Rank`, `FileCount`, `Filenames`, and `GenePositions` to offer both ranking metrics and contextual metadata.
+-   Tables support filtering, searching, and horizontal/vertical scrolling depending on the number of genes and columns, ensuring an intuitive and flexible inspection experience.
+
+::: panel-tabset
+
+##### Impute simple
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/impute.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 7: Table generated by applying imputation management without additional penalty
+</p> 
+
+##### Impute extra penalization
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/imputeex.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 8: Table generated by applying imputation management with an additional penalty
+</p> 
+
+##### Ignore simple
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/ignore.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 9: Table generated by applying the ignore management without additional penalty
+</p> 
+
+##### Ignore extra penalization
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/ignoreex.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 10: Table generated by applying the ignore management with an additional penalty
+</p> 
+
+
+##### Penalization
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/penalized.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 11: Table generated by applying penalization management without additional penalty 
+</p> 
+
+:::
+
+#### Excluded table
+
+Interactive data table showing all genes that were excluded from the final meta-analysis results due to insufficient presence across lists.
+In this example, genes appearing in only 1 of the 4 datasets were excluded:
+
+![](www/images/example2_metarank_excluded.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;">
+Figure 4: Excluded data in table format after running the advanced example (penalized NA managment)
+</p>
+
+
+#### UpsetPlot
+
+The UpSet plot summarizes the intersection patterns among input gene lists before filtering and is used to evaluate the structure of gene overlaps across datasets.
+
+For this example, the UpSet plot was generated using the `penalized NA management` strategy, with the following customizations:
+
+-   **Text size**: 30
+-   **Set Size Bars Color**: Yellow (`#f0e442`)
+-   **Intersection Bars Color**: Dark purple (`#5e1b8f`)
+
+This representation helps identify dominant intersections and shared gene subsets, useful prior to applying filtering thresholds.
+
+![](www/images/example2_metarank_upset.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;"> 
+Figure 5: UpSet plot generated with penalized strategy for NA handling 
+</p>
+
+
+#### Heatmap
+
+The heatmap visualizes pairwise similarities between input gene lists, calculated as the proportion of shared genes.
+
+In this case, the heatmap reflects the penalized run, and was customized as follows:
+
+-   **Tick Size**: 17
+-   **Title Size**: 25
+-   **Color Scale**: Portland (for visually distinct, publication-ready gradients)
+
+This helps identify which datasets are more similar in gene content, independently of ranking or scores.
+
+![](www/images/example2_metarank_heatmap.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;"> 
+Figure 6: Heatmap plot generated with penalized strategy for NA handling 
+</p>
+
+
+#### Enrichment Analysis Table
+
+The enrichment module was enabled only for the penalized NA run, to demonstrate the downstream effects of NA strategy on biological interpretation.
+
+-   Only `ID` and `Description` columns were displayed.
+-   Top 20 terms were selected based on statistical significance.
+-   Focused display helps interpret functional context while avoiding data overload.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/MetaRank_results_Enrich2025-06-06.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 12: Enrichment result table from the penalized NA handling meta-analysis 
+</p>
+
+
+#### Enrichment Plot
+
+The enrichment plot was generated only for the penalized run, using a bar plot format that supports easier interpretation of top enriched terms:
+
+-   **Y-axis**: Term Description only
+-   **Top Terms**: 20
+-   **Color gradient**:
+  -   **Low (more significant)**: Dark purple (`#5e1b8f`)
+  -   **High (less significant)**: Yellow (`#f0e442`)
+-   **Text Size**: 10 pt (optimized for dense output)
+
+This setup enables quick visual identification of key enriched pathways.
+
+![](www/images/example2_metarank_enrich.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -2px;"> 
+Figure 7: Enrichment bar plot showing top 20 terms based on the penalized meta-analysis 
+</p>
+
+<br>
+
+
+
+## RobustRankAggreg Specific Example: Consensus Ranking with Example Data, RRA method and Reactome Enrichment Analysis
+
+**Objective:** Perform a meta-analysis using the `RobustRankAggreg method`, which is designed for unweighted ranking data, and explore how different aggregation functions and missing data strategies impact the resulting consensus. The analysis includes functional enrichment of the top 50 human genes (`SYMBOL`) using the *KEGG* database.
+
+### Method Selection
+
+In contrast to the weighted `RankProd method`, this example uses the RobustRankAggreg approach, which is suitable for unweighted ranked gene lists. This method is ideal when datasets provide ranked genes but lack associated scores such as p-values or fold-changes. RobustRankAggreg offers multiple aggregation techniques (e.g., minimum p-value, geometric mean) to compute a consensus ranking and assess the statistical significance of each gene.
+
+Unlike weighted methods, RRA assumes that gene order alone captures relevance, and the method adjusts automatically for missing entries without requiring additional penalization—this simplifies handling of incomplete data while still controlling for spurious consistency.
+
+### Input
+
+The same input structure as in previous examples is used: four predefined gene lists loaded via the Use Example Data switch. Each list represents a lung cancer-related study retrieved from GEO and contains human gene identifiers in SYMBOL format, allowing users to explore the workflow without providing their own data.
+
+The table below summarizes the content of the example gene lists:
+
+-   **Sources**: GSE10072, GSE19188, GSE63459, GSE75037
+-   **Identifiers**: All genes use the SYMBOL notation
+-   **List Sizes**: 19,417; 21,752; 17,509; and 13,099 genes respectively
+-   **Content Notes**: Lists may contain duplicates and missing values, simulating real-world dataset variability
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_files <- c(
+  "./example_data/gene1.txt",
+  "./example_data/gene2.txt",
+  "./example_data/gene3.txt",
+  "./example_data/gene4.txt")
+
+gene_lists <- lapply(example_files, function(path) {
+  lines <- readLines(path, warn = FALSE)
+  lines <- trimws(lines)
+  lines[lines != ""]})
+max_length <- max(sapply(gene_lists, length))
+gene_lists_padded <- lapply(gene_lists, function(vec) {
+  length(vec) <- max_length
+  vec})
+df_gene_lists <- as.data.frame(
+  setNames(gene_lists_padded, paste0("List_", seq_along(gene_lists_padded))),
+  stringsAsFactors = FALSE)
+
+datatable(df_gene_lists, rownames = FALSE)
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 13: Prepared example data for RobustRankAggreg method. 
+</p>
+
+
+
+### Parameters
+
+The analysis options selected to achieve the objective are as follows:
+
+| Parameter                       | Selected Option  | Justification and Description                                                                                                                                                                                                                                                 |
+| ------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Aggregation Method**          | All methods      | The analysis is executed with all available RRA aggregation functions (RobustRankAggreg, Min, Geometric Mean, Arithmetic Mean, Median, Stuart). This comparison allows users to evaluate which method offers the most consistent top-ranked genes across datasets.            |
+| **Minimum Number of Datasets**  | 2                | Only genes appearing in **at least 2 lists** are considered. This removes genes with minimal support, reducing noise while preserving flexibility.                                                                                                                            |
+| **Missing Value Handling**      | Ignore, Penalize | Two strategies are compared: `ignore` (skip missing entries without adding noise) and `penalize` (apply worst-case rank to missing genes). Note: **additional penalization is not applied** under `ignore` mode, since RRA already accounts for absence in its scoring model. |
+| **Perform Enrichment Analysis** | Enabled          | Functional enrichment is performed on the top-ranked genes. This helps interpret the biological significance of the consensus using known gene-pathway associations.                                                                                                          |
+| **Number of Top Genes**         | 50               | The top 50 consensus-ranked genes are used for enrichment, providing a focused and interpretable gene set.                                                                                                                                                                    |
+| **ORA Database**                | KEGG             | The KEGG pathway database is selected to identify functionally relevant metabolic and signaling pathways. This supports the biological interpretation of consensus findings in disease contexts such as cancer.                                                               |
+| **Species**                     | Human            | Ensures accurate gene annotation and mapping during enrichment, using human gene identifiers.                                                                                                                                                                                 |
+| **Gene ID**                     | SYMBOL           | All identifiers in the input use the standard `SYMBOL` format (e.g., TP53, EGFR), which aligns with KEGG and gene annotation services.                                                                                                                                        |
+
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;">
+Table 14: Configuration of the parameters tab for the RRA method example of use
+</p>
+
+::: callout-note
+
+RobustRankAggreg (RRA) provides an effective approach to consensus ranking when input data consists of ordered gene lists without associated scores. The method calculates the probability that a gene would achieve its observed rankings across lists by chance, using a beta-uniform mixture model.
+
+In this example, two strategies for missing data are compared:
+
+-   Ignore: Missing entries are excluded from calculations. Since RRA internally adjusts significance for the number of lists a gene appears in, no further penalization is necessary.
+
+-   Penalize: Missing values are assigned the worst possible rank, mimicking conservative scenarios and enabling stricter gene filtering.
+
+The use of multiple aggregation methods provides insight into the consistency and robustness of gene importance across algorithms. After ranking, the top 50 genes are analyzed via ORA using the KEGG pathway database, enabling detection of enriched functional modules in the context of human biology.
+
+:::
+
+
+### Data Visualization
+
+Once the parameters have been configured, attention turns to the output visualization section (`Data Visualization`), where both the resulting table and plots can be fully customized. In this example, all visualization options were left at their default settings to preserve a neutral layout and provide a baseline for interpretation.
+
+
+| Setting                             | Configuration      | Details                                                                                             |
+| ----------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
+| **Meta-Analysis Columns**           | All default        | No changes made; the default columns selected by the app are displayed in the result table.         |
+| **Upset Plot – Text Size**          | 12                 | Default size suitable for most datasets, balancing clarity and space usage.                         |
+| **Upset Plot – Sets Bar Color**     | `#66c2a5` (green)  | Default green tone to indicate dataset-specific set sizes.                                          |
+| **Upset Plot – Intersection Color** | `#fc8d62` (orange) | Default orange tone highlighting shared genes across datasets.                                      |
+| **Heatmap – Tick Size**             | 12                 | Default size, offering legibility without overcrowding.                                             |
+| **Heatmap – Title Size**            | 16                 | Standard size for balance in visual hierarchy.                                                      |
+| **Heatmap – Color Scale**           | Viridis            | The default color scale offers perceptual uniformity and accessibility.                             |
+| **Enrichment Table Columns**        | All default        | All default columns provided by the enrichment tool are shown.                                      |
+| **Number of Terms to Show**         | 10                 | Default value showing the top 10 enriched terms for a concise overview.                             |
+| **Y-Axis Label**                    | Term               | The default label displays the technical term ID for consistency with enrichment databases.         |
+| **Plot Type**                       | Dot Plot           | Default plot type offering compact representation of multiple attributes (e.g., p-value and count). |
+| **Plot – Low Color**                | `#66c2a5` (green)  | Default color for highly significant terms (lower p-values).                                        |
+| **Plot – High Color**               | `#fc8d62` (orange) | Default color for less significant terms (higher p-values).                                         |
+| **Plot – Text Size**                | 12 pt              | Default text size offering a balance between readability and compact layout.                        |
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 15: Default configuration of the data visualization tab 
+</p>
+
+Once customization is complete, pressing the Run Analysis button initiates the *Over-Representation Analysis (ORA)*, applies the selected meta-analysis method, constructs the final results structure, and renders both the interactive table and the corresponding plot.
+
+::: callout-tip
+Table and plot customizations can also be performed after analysis completion; any changes to columns, filters, or visual settings will be applied immediately without re-running the analysis.
+:::
+
+
+### Outputs
+
+#### Meta-analysis Table
+
+-   Six independent meta-analyses were performed, each using a distinct strategy for aggregating gene rankings across input lists: `RRA`, `minimum rank`, `geometric mean`, `arithmetic mean`, `median`, and `Stuart’s method`.
+-   Each method produced a separate consensus ranking table, exported in `TSV` format for comparison.
+-   These tables allow users to evaluate the robustness of the meta-ranking results and inspect how gene prioritization varies depending on the aggregation technique.
+-   All six result tables are displayed below as interactive data tables, enabling side-by-side exploration of method-specific differences.
+-   Each table includes key columns such as `GeneID`, `Rank`, `Score`, `p.adjust` `FileCount`, `Filenames`, and `GenePositions`, offering both summary statistics and detailed context.
+-   Tables are searchable, filterable, and support horizontal/vertical scrolling, ensuring a responsive and user-friendly inspection experience.
+
+::: panel-tabset
+
+##### RRA
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/rra.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 16: Table generated by applying RRA aggregation method
+</p> 
+
+##### Min
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/min.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 17: Table generated by applying Minimum aggregation method
+</p> 
+
+##### Geometric Mean
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/gmean.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 18: Table generated by applying Geometric Mean aggregation method
+</p> 
+
+##### Arithmetic Mean
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/amean.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 19: Table generated by applying Arithmetic mean aggregation method
+</p> 
+
+
+##### Median
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/median.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 20: Table generated by applying Median aggregation method
+</p> 
+
+
+##### Stuart
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/stuart.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 21: Table generated by applying Stuart aggregation method
+</p> 
+
+
+
+:::
+
+#### Excluded table
+
+Interactive data table showing all genes that were excluded from the final meta-analysis results due to insufficient presence across lists.
+In this example, genes appearing in only 1 of the 4 datasets were excluded:
+
+![](www/images/example3_metarank_excluded.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;">
+Figure 8: Excluded data in table format after running the RRA method
+</p>
+
+
+#### UpsetPlot
+
+The UpSet plot visualizes intersection patterns among the original gene lists, prior to filtering. It supports assessment of gene overlaps across datasets and guides interpretation of shared signals.
+
+For this example, the plot corresponds to the `RRA method`, with the following customization:
+
+-   **Text Size**: 25 
+-   **Set Size Bar Color**: Yellow (`#f0e442`)
+-   **Intersection Bar Color**: Dark purple (`#5e1b8f`)
+
+This representation helps identify dominant intersections and shared gene subsets, useful prior to applying filtering thresholds.
+
+![](www/images/example3_metarank_upset.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;"> 
+Figure 9: UpSet plot generated with RRA aggreagtion method 
+</p>
+
+
+#### Heatmap
+
+The heatmap visualizes pairwise similarities between input gene lists, calculated as the proportion of shared genes.
+
+In this case, the heatmap reflects the penalized run, and was customized as follows:
+
+-   **Tick Size**: 15
+-   **Title Size**: 20
+-   **Color Scale**: Viridis (for visually distinct, publication-ready gradients)
+
+This helps identify which datasets are more similar in gene content, independently of ranking or scores.
+
+![](www/images/example3_metarank_heatmap.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;"> 
+Figure 10: Heatmap plot generated with RRA aggreagtion method
+</p>
+
+
+#### Enrichment Analysis Table
+
+The enrichment module was enabled only for the RRA aggregation method run, to demonstrate the downstream effects of NA strategy on biological interpretation.
+
+-   All columns were displayed.
+-   Top 10 terms were selected based on statistical significance.
+-   Focused display helps interpret functional context while avoiding data overload.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+example_data <- "www/MetaRank_results_Enrich2025-06-06-06.tsv"
+data <- read.delim(example_data, sep = "\t", header = TRUE,  colClasses = "character")
+table_h <- ifelse(nrow(data) > 10, "400px", "auto")
+
+datatable(
+  data,
+  rownames  = FALSE,
+  selection = "multiple",
+  filter    = "top",
+  escape    = FALSE,
+  options   = list(pageLength = 10,
+                   scrollX    = TRUE,
+                   scrollY    = table_h,
+                   autoWidth  = FALSE,
+                   columnDefs = list(list(targets   = "_all",
+                                          className = "dt-wrap",
+                                        width     = paste0(round(100 / max(1, ncol(data))), "%")))))
+```
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: 15px;"> 
+Table 22: Enrichment result table from the RRA aggregation method 
+</p>
+
+
+#### Enrichment Plot
+
+The enrichment plot was generated only for the RRA aggregation method run, using a bar plot format that supports easier interpretation of top enriched terms:
+
+-   **Y-axis**: Term + Description
+-   **Top Terms**: 10
+-   **Color gradient**:
+  -   **Low (more significant)**: `#0838a0` (dark blue)
+  -   **High (less significant)**: `#2ba915` (green)
+-   **Text Size**: 10 pt (optimized for dense output)
+
+This setup enables quick visual identification of key enriched pathways.
+
+![](www/images/example3_metarank_enrich.png){fig-align="center"}
+
+<p style="text-align: center; font-style: italic; color: #666; margin-top: -7px;"> 
+Figure 11: Enrichment bar plot showing top 10 terms based on the RRA aggregation method 
+</p>
+
+<br>
+
