@@ -1,0 +1,73 @@
+Gene	Stat.data
+Myc	  1.2e-06
+Gapdh	  3.5e-04
+Il2ra	  0.0021
+Hprt	  0.0127
+Gata3	  0.0234
+Cdkn1a	  0.0458
+Actb	  0.1083
+Sox2	  0.2561
+Foxp3	  0.3987
+Tp53	  0.7324
+###
+Gene	Stat.data
+Gapdh	  5.4e-07
+Il6	  9.8e-04
+Nanog	  0.0062
+Il2ra	  0.0145
+Sox2	  0.0378
+Cdkn1a	  0.0821
+Gata3	  0.1256
+Bcl2	  0.2743
+Actb	  0.4198
+Foxp3	  0.7890
+###
+Gene	Stat.data
+Il6	  8.3e-05
+Gapdh	  0.0004
+Cdkn1a	  0.0029
+Myc	  0.0105
+Nanog	  0.0342
+Gata3	  0.0678
+Pou5f1	  0.1534
+Actb	  0.2876
+Stat3	  0.5012
+Foxp3	  0.8429
+Tbx21	  0.9567
+###
+Gene,Stat.data
+Myc,1.2e-06
+Gapdh,3.5e-04
+Il2ra,0.0021
+Hprt,0.0127
+Gata3,0.0234
+Cdkn1a,0.0458
+Actb,0.1083
+Sox2,0.2561
+Foxp3,0.3987
+Tp53,0.7324
+###
+Gene,Stat.data
+Gapdh,5.4e-07
+Il6,9.8e-04
+Nanog,0.0062
+Il2ra,0.0145
+Sox2,0.0378
+Cdkn1a,0.0821
+Gata3,0.1256
+Bcl2,0.2743
+Actb,0.4198
+Foxp3,0.7890
+###
+Gene,Stat.data
+Il6,8.3e-05
+Gapdh,0.0004
+Cdkn1a,0.0029
+Myc,0.0105
+Nanog,0.0342
+Gata3,0.0678
+Pou5f1,0.1534
+Actb,0.2876
+Stat3,0.5012
+Foxp3,0.8429
+Tbx21,0.9567
